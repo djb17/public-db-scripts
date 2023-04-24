@@ -12,21 +12,27 @@ def retrieve_via_formula(metabolites, formula, current_dict):
     if formula in list(current_dict.keys()):
         return(current_dict)
     
-    info_dict = {'name': [], 'accession': [],
-                 'average_molecular_weight':[], 'description': [],
-                 'origin':[], 'pathways': [], 
-                 'kingdom':[], 'super_class':[], 'met_class':[], 'sub_class':[], 'molecular_framework':[]}
+    info_dict = {'name': [], 'synonyms':[], 'accession': [], 'foodb_id':[], 'drugbank_id':[],
+                 'average_molecular_weight':[], 'description': [], 'diseases':[],
+                 'origin':[], 'pathways': [], 'kingdom':[], 'super_class':[], 'met_class':[],
+                 'sub_class':[], 'molecular_framework':[]}
     for metabolite in metabolites:
-        
+
         # get the chem formula of the current metabolite
         chemical_formula = metabolite.find("{http://www.hmdb.ca}chemical_formula")
         
         # if the formula exists, then check if its the same as the one we're querying
         if chemical_formula is not None and chemical_formula.text == formula:
             name_element = metabolite.find("{http://www.hmdb.ca}name")
+            synm_element = metabolite.find("{http://www.hmdb.ca}synonyms")
+            
             desc_element = metabolite.find("{http://www.hmdb.ca}description")
             acsn_element = metabolite.find("{http://www.hmdb.ca}accession")
             molw_element = metabolite.find("{http://www.hmdb.ca}average_molecular_weight")
+            
+            food_element = metabolite.find("{http://www.hmdb.ca}foodb_id")
+            drug_element = metabolite.find("{http://www.hmdb.ca}drugbank_id")
+            sick_element = metabolite.find("{http://www.hmdb.ca}diseases")
             
             taxonomy = metabolite.find("{http://www.hmdb.ca}taxonomy")
             kingdom = taxonomy.find("{http://www.hmdb.ca}kingdom")
@@ -46,9 +52,14 @@ def retrieve_via_formula(metabolites, formula, current_dict):
             info_dict['met_class'].append('' if met_class is None else met_class.text)
             info_dict['sub_class'].append('' if sub_class is None else sub_class.text)
             info_dict['molecular_framework'].append('' if molecular_framework is None else molecular_framework.text)
-
-            # print(f"{formula}:{name_text}")
             
+            info_dict['foodb_id'].append('' if food_element is None else food_element.text)
+            info_dict['drugbank_id'].append('' if drug_element is None else drug_element.text)
+            
+            
+            info_dict['diseases'].append(';'.join([i.find("{http://www.hmdb.ca}name").text for i in sick_element.findall('*')]))
+            info_dict['synonyms'].append([i.text for i in synm_element.findall('*')])
+                      
             # look for origin of the compound under 'Ontology'
             onto_element = metabolite.find("{http://www.hmdb.ca}ontology")
             if len(onto_element) > 0:
